@@ -27,6 +27,7 @@ interface LocalStorageData {
 
 const UserList = () => {
   const [users, setUsers] = useState<User[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(2);
   const [loading, setLoading] = useState(true);
@@ -82,12 +83,43 @@ const UserList = () => {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(parsedData));
   };
 
+  // Add function to fetch all users
+  const fetchAllUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      // Fetch first page to get total pages
+      const firstPageResponse = await axios.get(`${API_BASE_URL}/users?page=1`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const totalPages = firstPageResponse.data.total_pages;
+
+      // Fetch all pages
+      const allUsersPromises = [];
+      for (let i = 1; i <= totalPages; i++) {
+        allUsersPromises.push(
+          axios.get(`${API_BASE_URL}/users?page=${i}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          })
+        );
+      }
+
+      const responses = await Promise.all(allUsersPromises);
+      const allUsers = responses.flatMap(response => response.data.data);
+      setAllUsers(allUsers);
+    } catch (err) {
+      console.error('Failed to fetch all users:', err);
+    }
+  };
+
   useEffect(() => {
     if (!isAuthenticated) {
       navigate('/login', { replace: true });
       return;
     }
     fetchUsers();
+    fetchAllUsers();
   }, [page, isAuthenticated]);
 
   const fetchUsers = async () => {
@@ -209,7 +241,14 @@ const UserList = () => {
           : user
       );
       
+      const updatedAllUsers = allUsers.map(user =>
+        user.id === selectedUser.id
+          ? { ...user, ...editForm }
+          : user
+      );
+
       setUsers(updatedUsers);
+      setAllUsers(updatedAllUsers);
       saveToLocalStorage(page, updatedUsers, totalPages);
       setEditDialogOpen(false);
       setValidationError({});
@@ -238,7 +277,10 @@ const UserList = () => {
       });
 
       const updatedUsers = users.filter(user => user.id !== userId);
+      const updatedAllUsers = allUsers.filter(user => user.id !== userId);
+      
       setUsers(updatedUsers);
+      setAllUsers(updatedAllUsers);
       saveToLocalStorage(page, updatedUsers, totalPages);
       setToast({
         message: 'User deleted successfully',
@@ -258,16 +300,18 @@ const UserList = () => {
     navigate('/login', { replace: true });
   };
 
-  const filteredUsers = users.filter(user => {
-    const searchTerms = searchQuery.toLowerCase().split(' ').filter(term => term.length > 0);
-    const fullName = `${user.first_name} ${user.last_name}`.toLowerCase();
-    const email = user.email.toLowerCase();
+  const filteredUsers = searchQuery
+    ? allUsers.filter(user => {
+        const searchTerms = searchQuery.toLowerCase().split(' ').filter(term => term.length > 0);
+        const fullName = `${user.first_name} ${user.last_name}`.toLowerCase();
+        const email = user.email.toLowerCase();
 
-    return searchTerms.every(term => 
-      fullName.includes(term) || 
-      email.includes(term)
-    );
-  });
+        return searchTerms.every(term => 
+          fullName.includes(term) || 
+          email.includes(term)
+        );
+      })
+    : users;
 
   if (loading) {
     return (
@@ -346,61 +390,94 @@ const UserList = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredUsers.map((user) => (
-            <div key={user.id} className={`${
-              isDarkMode 
-                ? 'bg-slate-800/50 backdrop-blur-xl border-slate-700/50' 
-                : 'bg-white border-gray-200'
-            } border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300`}>
-              <div className="p-5">
-                <div className="flex items-center">
-                  <img
-                    src={user.avatar}
-                    alt={`${user.first_name} ${user.last_name}`}
-                    className="h-12 w-12 rounded-full ring-2 ring-blue-500/20"
-                  />
-                  <div className="ml-4">
-                    <h3 className={`text-lg font-medium truncate ${
-                      isDarkMode ? 'text-white' : 'text-gray-900'
-                    }`}>
-                      {user.first_name} {user.last_name}
-                    </h3>
-                    <p className={`text-sm truncate flex items-center ${
-                      isDarkMode ? 'text-slate-300' : 'text-gray-500'
-                    }`}>
-                      <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                      </svg>
-                      {user.email}
-                    </p>
+        {searchQuery && filteredUsers.length === 0 ? (
+          <div className={`text-center py-12 rounded-lg ${
+            isDarkMode ? 'bg-slate-800/50' : 'bg-white'
+          }`}>
+            <svg
+              className={`mx-auto h-12 w-12 ${
+                isDarkMode ? 'text-slate-400' : 'text-gray-400'
+              }`}
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <h3 className={`mt-2 text-sm font-medium ${
+              isDarkMode ? 'text-white' : 'text-gray-900'
+            }`}>
+              No users found
+            </h3>
+            <p className={`mt-1 text-sm ${
+              isDarkMode ? 'text-slate-400' : 'text-gray-500'
+            }`}>
+              Sorry, we couldn't find any users matching "{searchQuery}"
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredUsers.map((user) => (
+              <div key={user.id} className={`${
+                isDarkMode 
+                  ? 'bg-slate-800/50 backdrop-blur-xl border-slate-700/50' 
+                  : 'bg-white border-gray-200'
+              } border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300`}>
+                <div className="p-5">
+                  <div className="flex items-center">
+                    <img
+                      src={user.avatar}
+                      alt={`${user.first_name} ${user.last_name}`}
+                      className="h-12 w-12 rounded-full ring-2 ring-blue-500/20"
+                    />
+                    <div className="ml-4">
+                      <h3 className={`text-lg font-medium truncate ${
+                        isDarkMode ? 'text-white' : 'text-gray-900'
+                      }`}>
+                        {user.first_name} {user.last_name}
+                      </h3>
+                      <p className={`text-sm truncate flex items-center ${
+                        isDarkMode ? 'text-slate-300' : 'text-gray-500'
+                      }`}>
+                        <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                        </svg>
+                        {user.email}
+                      </p>
+                    </div>
                   </div>
                 </div>
+                <div className={`px-5 py-3 flex justify-end space-x-2 ${
+                  isDarkMode ? 'bg-slate-800/30' : 'bg-gray-50'
+                }`}>
+                  <button
+                    onClick={() => handleEdit(user)}
+                    className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-lg text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors ${
+                      isDarkMode ? 'focus:ring-offset-slate-900' : 'focus:ring-offset-white'
+                    }`}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(user.id)}
+                    className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-lg text-red-400 bg-red-500/10 hover:bg-red-500/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors ${
+                      isDarkMode ? 'focus:ring-offset-slate-900' : 'focus:ring-offset-white'
+                    }`}
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
-              <div className={`px-5 py-3 flex justify-end space-x-2 ${
-                isDarkMode ? 'bg-slate-800/30' : 'bg-gray-50'
-              }`}>
-                <button
-                  onClick={() => handleEdit(user)}
-                  className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-lg text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors ${
-                    isDarkMode ? 'focus:ring-offset-slate-900' : 'focus:ring-offset-white'
-                  }`}
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(user.id)}
-                  className={`inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-lg text-red-400 bg-red-500/10 hover:bg-red-500/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors ${
-                    isDarkMode ? 'focus:ring-offset-slate-900' : 'focus:ring-offset-white'
-                  }`}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         <div className="mt-8 flex justify-center">
           <nav className="relative z-0 gap-4 inline-flex rounded-lg shadow-sm" aria-label="Pagination">
