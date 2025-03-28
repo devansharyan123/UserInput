@@ -12,16 +12,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
+    // Check both sessionStorage and localStorage for backward compatibility
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (token) {
+      setIsAuthenticated(true);
+      // Migrate token to sessionStorage if it exists in localStorage
+      if (localStorage.getItem('token')) {
+        sessionStorage.setItem('token', token);
+        localStorage.removeItem('token');
+      }
+    }
   }, []);
 
   const login = (token: string) => {
-    localStorage.setItem('token', token);
+    // Store in sessionStorage for better security
+    sessionStorage.setItem('token', token);
     setIsAuthenticated(true);
   };
 
   const logout = () => {
+    // Clear both storages to ensure complete logout
+    sessionStorage.removeItem('token');
     localStorage.removeItem('token');
     setIsAuthenticated(false);
   };

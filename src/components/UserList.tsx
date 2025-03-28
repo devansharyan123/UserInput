@@ -86,7 +86,7 @@ const UserList = () => {
   // Add function to fetch all users
   const fetchAllUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       if (!token) return;
 
       // Fetch first page to get total pages
@@ -125,7 +125,7 @@ const UserList = () => {
   const fetchUsers = async () => {
     try {
       setLoading(true);
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       if (!token) {
         navigate('/login', { replace: true });
         return;
@@ -224,7 +224,7 @@ const UserList = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       if (!token || !selectedUser) return;
 
       await axios.put(
@@ -269,7 +269,7 @@ const UserList = () => {
     if (!window.confirm('Are you sure you want to delete this user?')) return;
 
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       if (!token) return;
 
       await axios.delete(`${API_BASE_URL}/users/${userId}`, {
