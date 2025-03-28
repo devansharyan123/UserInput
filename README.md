@@ -12,8 +12,11 @@ You can access the live demo of the application at:
 ### Authentication
 - Secure login system
 - Protected routes
-- Token-based authentication
+- Token-based authentication (see screenshot below)
 - Automatic redirection to login for unauthenticated users
+
+![Token-based Authentication](./public/token-auth.png)
+*Screenshot showing JWT token generated upon successful login*
 
 ### User Management
 - View list of users with pagination
