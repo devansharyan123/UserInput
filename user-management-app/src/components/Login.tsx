@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import { useSelector } from 'react-redux';
+import { RootState } from '../store/store';
 
 const API_BASE_URL = 'https://reqres.in/api';
 
@@ -12,13 +14,21 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
+  const isDarkMode = useSelector((state: RootState) => state.theme.isDarkMode);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate against test credentials
+    if (email !== 'eve.holt@reqres.in' || password !== 'cityslicka') {
+      setError('Invalid credentials. Please use the provided test credentials.');
+      return;
+    }
+
     try {
       const response = await axios.post(`${API_BASE_URL}/login`, {
-        email: 'eve.holt@reqres.in',
-        password: 'cityslicka',
+        email,
+        password,
       });
       login(response.data.token);
       navigate('/users', { replace: true });
@@ -28,31 +38,49 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800 flex items-center justify-center p-4">
-      <div className="max-w-md w-full space-y-8 bg-white/10 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-white/20">
+    <div className={`min-h-screen flex items-center justify-center p-4 ${
+      isDarkMode 
+        ? 'bg-gradient-to-br from-slate-900 to-slate-800' 
+        : 'bg-gradient-to-br from-blue-50 to-indigo-100'
+    }`}>
+      <div className={`max-w-md w-full space-y-8 rounded-2xl shadow-2xl p-8 border transition-colors duration-200 ${
+        isDarkMode 
+          ? 'bg-white/10 backdrop-blur-xl border-white/20' 
+          : 'bg-white/80 backdrop-blur-xl border-gray-200'
+      }`}>
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-2 tracking-tight">
+          <h1 className={`text-4xl font-bold mb-2 tracking-tight ${
+            isDarkMode ? 'text-white' : 'text-gray-900'
+          }`}>
             Welcome Back
           </h1>
-          <p className="text-slate-300 text-sm">
+          <p className={`text-sm ${
+            isDarkMode ? 'text-slate-300' : 'text-gray-600'
+          }`}>
             Use test credentials: eve.holt@reqres.in / cityslicka
           </p>
         </div>
 
         {error && (
-          <div className="bg-red-500/10 border-l-4 border-red-500 p-4 rounded-md">
-            <p className="text-red-200">{error}</p>
+          <div className={`border-l-4 border-red-500 p-4 rounded-md ${
+            isDarkMode ? 'bg-red-500/10' : 'bg-red-50'
+          }`}>
+            <p className="text-red-600">{error}</p>
           </div>
         )}
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-200">
+            <label htmlFor="email" className={`block text-sm font-medium ${
+              isDarkMode ? 'text-slate-200' : 'text-gray-700'
+            }`}>
               Email Address
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <svg className={`h-5 w-5 ${
+                  isDarkMode ? 'text-slate-400' : 'text-gray-400'
+                }`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
                   <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
                 </svg>
@@ -62,7 +90,11 @@ const Login = () => {
                 name="email"
                 type="email"
                 required
-                className="block w-full pl-10 pr-3 py-2.5 bg-white/5 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                className={`block w-full pl-10 pr-3 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                  isDarkMode 
+                    ? 'bg-white/5 border-slate-600 text-white placeholder-slate-400' 
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                }`}
                 placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -71,12 +103,16 @@ const Login = () => {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-slate-200">
+            <label htmlFor="password" className={`block text-sm font-medium ${
+              isDarkMode ? 'text-slate-200' : 'text-gray-700'
+            }`}>
               Password
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <svg className={`h-5 w-5 ${
+                  isDarkMode ? 'text-slate-400' : 'text-gray-400'
+                }`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
                 </svg>
               </div>
@@ -85,7 +121,11 @@ const Login = () => {
                 name="password"
                 type={showPassword ? 'text' : 'password'}
                 required
-                className="block w-full pl-10 pr-10 py-2.5 bg-white/5 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                className={`block w-full pl-10 pr-10 py-2.5 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                  isDarkMode 
+                    ? 'bg-white/5 border-slate-600 text-white placeholder-slate-400' 
+                    : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                }`}
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -94,7 +134,9 @@ const Login = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="text-slate-400 hover:text-slate-300 focus:outline-none transition-colors"
+                  className={`focus:outline-none transition-colors ${
+                    isDarkMode ? 'text-slate-400 hover:text-slate-300' : 'text-gray-400 hover:text-gray-500'
+                  }`}
                 >
                   {showPassword ? (
                     <svg className="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
@@ -119,15 +161,6 @@ const Login = () => {
             Sign in
           </button>
         </form>
-
-        <div className="text-center">
-          <Link
-            to="/signup"
-            className="text-sm text-blue-400 hover:text-blue-300 font-medium transition-colors duration-200"
-          >
-            Don't have an account? Sign up
-          </Link>
-        </div>
       </div>
     </div>
   );
