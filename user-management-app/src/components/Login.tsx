@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import axios from 'axios';
@@ -29,6 +29,14 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    // Check if user is already logged in
+    const token = localStorage.getItem('token');
+    if (token) {
+      navigate('/users');
+    }
+  }, [navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -37,9 +45,8 @@ const Login = () => {
         password: 'cityslicka',
       });
       localStorage.setItem('token', response.data.token);
-      setTimeout(() => {
-        navigate('/users', { replace: true });
-      }, 100);
+      // Navigate immediately without timeout
+      navigate('/users');
     } catch (err) {
       setError('Invalid credentials. Please use the provided test credentials.');
     }
@@ -171,9 +178,10 @@ const Login = () => {
             </Box>
 
             <Box sx={{ mt: 2, textAlign: 'center' }}>
-              <Link
+              <Box
+                component={Link}
                 to="/signup"
-                style={{
+                sx={{
                   textDecoration: 'none',
                   color: '#1976d2',
                   fontWeight: 500,
@@ -183,7 +191,7 @@ const Login = () => {
                 }}
               >
                 Don't have an account? Sign up
-              </Link>
+              </Box>
             </Box>
           </Paper>
         </Box>

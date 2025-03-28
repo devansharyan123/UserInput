@@ -9,7 +9,6 @@ import {
   Typography,
   Paper,
   Container,
-  Grid,
   Card,
   CardContent,
   CardActions,
@@ -25,7 +24,8 @@ import {
   Alert,
   CircularProgress,
 } from '@mui/material';
-import type { GridProps } from '@mui/material';
+import Grid from '@mui/material/Grid';
+import type { GridProps } from '@mui/material/Grid';
 import {
   Search,
   Edit,
@@ -63,11 +63,17 @@ const UserList = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      navigate('/login');
+      return;
+    }
     fetchUsers();
-  }, [page]);
+  }, [page, navigate]);
 
   const fetchUsers = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
       if (!token) {
         navigate('/login');
@@ -79,9 +85,9 @@ const UserList = () => {
       });
       setUsers(response.data.data);
       setTotalPages(response.data.total_pages);
-      setLoading(false);
     } catch (err) {
       setError('Failed to fetch users. Please try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -203,9 +209,9 @@ const UserList = () => {
           }}
         />
 
-        <Grid container spacing={3}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 3 }}>
           {filteredUsers.map((user) => (
-            <Grid xs={12} sm={6} md={4} key={user.id}>
+            <Box key={user.id}>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -295,9 +301,9 @@ const UserList = () => {
                   </CardActions>
                 </Card>
               </motion.div>
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
 
         <Box
           sx={{
