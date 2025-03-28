@@ -1,40 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import axios from 'axios';
-import {
-  Box,
-  Button,
-  TextField,
-  Typography,
-  Paper,
-  Container,
-  Card,
-  CardContent,
-  CardActions,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Pagination,
-  InputAdornment,
-  AppBar,
-  Toolbar,
-  Alert,
-  CircularProgress,
-} from '@mui/material';
-import Grid from '@mui/material/Grid';
-import type { GridProps } from '@mui/material/Grid';
-import {
-  Search,
-  Edit,
-  Delete,
-  Logout,
-  Person,
-  Email,
-  Phone,
-} from '@mui/icons-material';
+import { useAuth } from '../context/AuthContext';
 
 const API_BASE_URL = 'https://reqres.in/api';
 
@@ -61,22 +28,22 @@ const UserList = () => {
     email: '',
   });
   const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
+    if (!isAuthenticated) {
+      navigate('/login', { replace: true });
       return;
     }
     fetchUsers();
-  }, [page, navigate]);
+  }, [page, isAuthenticated]);
 
   const fetchUsers = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
       if (!token) {
-        navigate('/login');
+        navigate('/login', { replace: true });
         return;
       }
 
@@ -144,8 +111,8 @@ const UserList = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+    logout();
+    navigate('/login', { replace: true });
   };
 
   const filteredUsers = users.filter(user =>
@@ -156,213 +123,191 @@ const UserList = () => {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '100vh',
-        }}
-      >
-        <CircularProgress />
-      </Box>
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
     );
   }
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static" sx={{ mb: 4 }}>
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            User Management
-          </Typography>
-          <Button
-            color="inherit"
-            startIcon={<Logout />}
-            onClick={handleLogout}
-          >
-            Logout
-          </Button>
-        </Toolbar>
-      </AppBar>
+    <div className="min-h-screen bg-slate-900">
+      <nav className="bg-slate-800/50 backdrop-blur-xl border-b border-slate-700/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex items-center">
+              <h1 className="text-xl font-semibold text-white">User Management</h1>
+            </div>
+            <div className="flex items-center">
+              <button
+                onClick={handleLogout}
+                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
 
-      <Container maxWidth="lg">
+      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
+          <div className="mb-4 bg-red-500/10 border-l-4 border-red-500 p-4 rounded-lg">
+            <p className="text-red-200">{error}</p>
+          </div>
         )}
 
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Search users..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{ mb: 4 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search />
-              </InputAdornment>
-            ),
-          }}
-        />
+        <div className="mb-6">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-10 pr-3 py-2.5 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              placeholder="Search users..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+        </div>
 
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 3 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredUsers.map((user) => (
-            <Box key={user.id}>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card
-                  sx={{
-                    height: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    transition: 'transform 0.2s',
-                    minHeight: '200px',
-                    maxHeight: '200px',
-                    '&:hover': {
-                      transform: 'translateY(-4px)',
-                    },
-                  }}
+            <div key={user.id} className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
+              <div className="p-5">
+                <div className="flex items-center">
+                  <img
+                    src={user.avatar}
+                    alt={`${user.first_name} ${user.last_name}`}
+                    className="h-12 w-12 rounded-full ring-2 ring-blue-500/20"
+                  />
+                  <div className="ml-4">
+                    <h3 className="text-lg font-medium text-white truncate">
+                      {user.first_name} {user.last_name}
+                    </h3>
+                    <p className="text-sm text-slate-300 truncate flex items-center">
+                      <svg className="h-4 w-4 mr-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                        <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                      </svg>
+                      {user.email}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-slate-800/30 px-5 py-3 flex justify-end space-x-2">
+                <button
+                  onClick={() => handleEdit(user)}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-lg text-blue-400 bg-blue-500/10 hover:bg-blue-500/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                 >
-                  <CardContent sx={{ flexGrow: 1, p: 2 }}>
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        mb: 1,
-                        height: '100%',
-                      }}
-                    >
-                      <img
-                        src={user.avatar}
-                        alt={`${user.first_name} ${user.last_name}`}
-                        style={{
-                          width: 50,
-                          height: 50,
-                          borderRadius: '50%',
-                          marginRight: 12,
-                          objectFit: 'cover',
-                        }}
-                      />
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Typography
-                          variant="h6"
-                          component="div"
-                          sx={{
-                            fontSize: '1rem',
-                            fontWeight: 600,
-                            mb: 0.5,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                        >
-                          {user.first_name} {user.last_name}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            fontSize: '0.875rem',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                        >
-                          <Email sx={{ fontSize: 16, mr: 1 }} />
-                          {user.email}
-                        </Typography>
-                      </Box>
-                    </Box>
-                  </CardContent>
-                  <CardActions sx={{ p: 1, pt: 0 }}>
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleEdit(user)}
-                      size="small"
-                    >
-                      <Edit />
-                    </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(user.id)}
-                      size="small"
-                    >
-                      <Delete />
-                    </IconButton>
-                  </CardActions>
-                </Card>
-              </motion.div>
-            </Box>
+                  Edit
+                </button>
+                <button
+                  onClick={() => handleDelete(user.id)}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-lg text-red-400 bg-red-500/10 hover:bg-red-500/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           ))}
-        </Box>
+        </div>
 
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            mt: 4,
-            mb: 4,
-          }}
-        >
-          <Pagination
-            count={totalPages}
-            page={page}
-            onChange={(_, value) => setPage(value)}
-            color="primary"
-            size="large"
-          />
-        </Box>
-      </Container>
+        <div className="mt-8 flex justify-center">
+          <nav className="relative z-0 inline-flex rounded-lg shadow-sm -space-x-px" aria-label="Pagination">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <button
+                key={pageNum}
+                onClick={() => setPage(pageNum)}
+                className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium rounded-lg transition-colors ${
+                  page === pageNum
+                    ? 'z-10 bg-blue-500/10 border-blue-500 text-blue-400'
+                    : 'bg-slate-800/50 border-slate-700 text-slate-300 hover:bg-slate-700/50'
+                }`}
+              >
+                {pageNum}
+              </button>
+            ))}
+          </nav>
+        </div>
+      </main>
 
-      <Dialog open={editDialogOpen} onClose={() => setEditDialogOpen(false)}>
-        <DialogTitle>Edit User</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin="dense"
-            label="First Name"
-            fullWidth
-            value={editForm.first_name}
-            onChange={(e) =>
-              setEditForm({ ...editForm, first_name: e.target.value })
-            }
-          />
-          <TextField
-            margin="dense"
-            label="Last Name"
-            fullWidth
-            value={editForm.last_name}
-            onChange={(e) =>
-              setEditForm({ ...editForm, last_name: e.target.value })
-            }
-          />
-          <TextField
-            margin="dense"
-            label="Email"
-            fullWidth
-            value={editForm.email}
-            onChange={(e) =>
-              setEditForm({ ...editForm, email: e.target.value })
-            }
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setEditDialogOpen(false)}>Cancel</Button>
-          <Button onClick={handleUpdate} variant="contained">
-            Save
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+      {editDialogOpen && (
+        <div className="fixed z-10 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div className="fixed inset-0 bg-slate-900/75 backdrop-blur-sm transition-opacity" aria-hidden="true"></div>
+            <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div className="inline-block align-bottom bg-slate-800 rounded-xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-slate-700/50">
+              <div className="bg-slate-800 px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                <div className="sm:flex sm:items-start">
+                  <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                    <h3 className="text-lg leading-6 font-medium text-white" id="modal-title">
+                      Edit User
+                    </h3>
+                    <div className="mt-4 space-y-4">
+                      <div>
+                        <label htmlFor="first_name" className="block text-sm font-medium text-slate-200">
+                          First Name
+                        </label>
+                        <input
+                          type="text"
+                          id="first_name"
+                          className="mt-1 block w-full bg-slate-700/50 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                          value={editForm.first_name}
+                          onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="last_name" className="block text-sm font-medium text-slate-200">
+                          Last Name
+                        </label>
+                        <input
+                          type="text"
+                          id="last_name"
+                          className="mt-1 block w-full bg-slate-700/50 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                          value={editForm.last_name}
+                          onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="email" className="block text-sm font-medium text-slate-200">
+                          Email
+                        </label>
+                        <input
+                          type="email"
+                          id="email"
+                          className="mt-1 block w-full bg-slate-700/50 border border-slate-600 rounded-lg py-2 px-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                          value={editForm.email}
+                          onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-slate-800/50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  onClick={handleUpdate}
+                  className="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
+                >
+                  Save
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditDialogOpen(false)}
+                  className="mt-3 w-full inline-flex justify-center rounded-lg border border-slate-600 shadow-sm px-4 py-2 bg-slate-700 text-base font-medium text-white hover:bg-slate-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 };
 
