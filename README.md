@@ -2,6 +2,11 @@
 
 A modern, responsive user management application built with React, TypeScript, and Tailwind CSS. This application allows you to manage users with features like viewing, editing, deleting, and searching users.
 
+## Live Demo
+
+You can access the live demo of the application at:
+[User Management App](https://globalgrowthwareprototype.netlify.app/login)
+
 ## Features
 
 ### Authentication
