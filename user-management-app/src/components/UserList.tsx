@@ -43,6 +43,11 @@ const UserList = () => {
     message: string;
     type: 'success' | 'error';
   } | null>(null);
+  const [validationError, setValidationError] = useState<{
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+  }>({});
   const navigate = useNavigate();
   const { isAuthenticated, logout } = useAuth();
   const isDarkMode = useSelector((state: RootState) => state.theme.isDarkMode);
@@ -130,7 +135,62 @@ const UserList = () => {
     setEditDialogOpen(true);
   };
 
+  // Add validation function
+  const validateName = (name: string): boolean => {
+    return /^[A-Za-z\s]+$/.test(name);
+  };
+
+  const handleNameChange = (field: 'first_name' | 'last_name', value: string) => {
+    if (!validateName(value)) {
+      setValidationError(prev => ({
+        ...prev,
+        [field]: 'Only alphabets and spaces are allowed'
+      }));
+    } else {
+      setValidationError(prev => ({
+        ...prev,
+        [field]: undefined
+      }));
+    }
+    setEditForm(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Add email validation function
+  const validateEmail = (email: string): boolean => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const handleEmailChange = (value: string) => {
+    if (!validateEmail(value)) {
+      setValidationError(prev => ({
+        ...prev,
+        email: 'Please enter a valid email address'
+      }));
+    } else {
+      setValidationError(prev => ({
+        ...prev,
+        email: undefined
+      }));
+    }
+    setEditForm(prev => ({
+      ...prev,
+      email: value
+    }));
+  };
+
   const handleUpdate = async () => {
+    // Check for validation errors before proceeding
+    if (validationError.first_name || validationError.last_name || validationError.email) {
+      setToast({
+        message: 'Please fix the validation errors before saving',
+        type: 'error'
+      });
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       if (!token || !selectedUser) return;
@@ -152,6 +212,7 @@ const UserList = () => {
       setUsers(updatedUsers);
       saveToLocalStorage(page, updatedUsers, totalPages);
       setEditDialogOpen(false);
+      setValidationError({});
       setToast({
         message: 'User updated successfully',
         type: 'success'
@@ -197,11 +258,16 @@ const UserList = () => {
     navigate('/login', { replace: true });
   };
 
-  const filteredUsers = users.filter(user =>
-    user.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    const searchTerms = searchQuery.toLowerCase().split(' ').filter(term => term.length > 0);
+    const fullName = `${user.first_name} ${user.last_name}`.toLowerCase();
+    const email = user.email.toLowerCase();
+
+    return searchTerms.every(term => 
+      fullName.includes(term) || 
+      email.includes(term)
+    );
+  });
 
   if (loading) {
     return (
@@ -399,10 +465,15 @@ const UserList = () => {
                             isDarkMode 
                               ? 'bg-slate-700/50 border-slate-600 text-white placeholder-slate-400' 
                               : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                          } ${
+                            validationError.first_name ? 'border-red-500 focus:ring-red-500' : ''
                           }`}
                           value={editForm.first_name}
-                          onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })}
+                          onChange={(e) => handleNameChange('first_name', e.target.value)}
                         />
+                        {validationError.first_name && (
+                          <p className="mt-1 text-sm text-red-500">{validationError.first_name}</p>
+                        )}
                       </div>
                       <div>
                         <label htmlFor="last_name" className={`block text-sm font-medium ${
@@ -417,10 +488,15 @@ const UserList = () => {
                             isDarkMode 
                               ? 'bg-slate-700/50 border-slate-600 text-white placeholder-slate-400' 
                               : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                          } ${
+                            validationError.last_name ? 'border-red-500 focus:ring-red-500' : ''
                           }`}
                           value={editForm.last_name}
-                          onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })}
+                          onChange={(e) => handleNameChange('last_name', e.target.value)}
                         />
+                        {validationError.last_name && (
+                          <p className="mt-1 text-sm text-red-500">{validationError.last_name}</p>
+                        )}
                       </div>
                       <div>
                         <label htmlFor="email" className={`block text-sm font-medium ${
@@ -435,10 +511,15 @@ const UserList = () => {
                             isDarkMode 
                               ? 'bg-slate-700/50 border-slate-600 text-white placeholder-slate-400' 
                               : 'bg-white border-gray-300 text-gray-900 placeholder-gray-500'
+                          } ${
+                            validationError.email ? 'border-red-500 focus:ring-red-500' : ''
                           }`}
                           value={editForm.email}
-                          onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                          onChange={(e) => handleEmailChange(e.target.value)}
                         />
+                        {validationError.email && (
+                          <p className="mt-1 text-sm text-red-500">{validationError.email}</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -456,7 +537,10 @@ const UserList = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setEditDialogOpen(false)}
+                  onClick={() => {
+                    setEditDialogOpen(false);
+                    setValidationError({});
+                  }}
                   className={`mt-3 w-full inline-flex justify-center rounded-lg border shadow-sm px-4 py-2 text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm transition-colors ${
                     isDarkMode
                       ? 'bg-slate-700 border-slate-600 text-white hover:bg-slate-600'
@@ -474,4 +558,4 @@ const UserList = () => {
   );
 };
 
-export default UserList; 
+export default UserList;
