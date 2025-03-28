@@ -62,17 +62,13 @@ cd user-management-app
 npm install
 ```
 
-3. Create a `.env` file in the root directory and add the following:
-```env
-VITE_API_BASE_URL=https://reqres.in/api
-```
 
-4. Start the development server:
+3. Start the development server:
 ```bash
 npm run dev
 ```
 
-5. Open your browser and navigate to:
+4. Open your browser and navigate to:
 ```
 http://localhost:5173
 ```
