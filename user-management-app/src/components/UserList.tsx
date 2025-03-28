@@ -28,7 +28,7 @@ interface LocalStorageData {
 const UserList = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(2);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -337,15 +337,15 @@ const UserList = () => {
         </div>
 
         <div className="mt-8 flex justify-center">
-          <nav className="relative z-0 inline-flex rounded-lg shadow-sm" aria-label="Pagination">
+          <nav className="relative z-0 gap-4 inline-flex rounded-lg shadow-sm" aria-label="Pagination">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
               <button
                 key={pageNum}
                 onClick={() => setPage(pageNum)}
                 className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium transition-colors ${
-                  pageNum === 1 ? 'rounded-l-lg' : ''
+                  pageNum === 1 ? 'rounded-lg' : ''
                 } ${
-                  pageNum === totalPages ? 'rounded-r-lg' : ''
+                  pageNum === totalPages ? 'rounded-lg' : ''
                 } ${
                   pageNum !== 1 ? '-ml-px' : ''
                 } ${
